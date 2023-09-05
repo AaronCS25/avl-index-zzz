@@ -29,8 +29,25 @@ class AVLIndex
         return;
     }
 
+    void initIndex()
+    {
+        initFile();
+        file.open(this->indexFileName, std::ios::in | std::ios::out | std::ios::binary);
+        if (!file.is_open()) { throw std::runtime_error("No se pudo abrir el archivo AVLIndex!"); }
+        file.seekg(0, std::ios::end);
+        long bytes = file.tellg();
+        if (bytes < sizeof(AVLIndexHeader))
+        {
+            AVLIndexHeader header;
+            file.seekp(0, std::ios::beg);
+            file.write((char*) &header, sizeof(AVLIndexHeader));
+        }
+        file.close();
+        return;        
+    }
+
 public:
-    //* Constructors:
+    //* Constructores:
     AVLIndex(std::string _indexFileName)
     {
         this->indexFileName = _indexFileName;
