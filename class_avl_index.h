@@ -51,6 +51,6 @@ public:
     AVLIndex(std::string _indexFileName)
     {
         this->indexFileName = _indexFileName;
-        initFile();
+        initIndex();
     }
 };
