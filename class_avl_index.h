@@ -133,7 +133,7 @@ class AVLIndex
 
     void leftRotation(posType nodePointer)
     {
-        AVLIndexNode a, b, c, d;
+        AVLIndexNode a, b;
         file.seekg(nodePointer, std::ios::beg);
         file.read((char*) &a, sizeof(AVLIndexNode));
 
@@ -143,15 +143,16 @@ class AVLIndex
         file.read((char*) &b, sizeof(AVLIndexNode));
 
         a.rigthChildren = b.leftChildren;
-        b.leftChildren = nodePointer;
+        b.leftChildren = childPointer;
         //b.parent = a.parent;
         //a.parent = childPointer;
 
-        file.seekp(childPointer, std::ios::beg);
+        file.seekp(nodePointer, std::ios::beg);
         file.write((char*) &b, sizeof(AVLIndexNode));
 
-        file.seekp(nodePointer, std::ios::end);
+        file.seekp(childPointer, std::ios::end);
         file.write((char*) &a, sizeof(AVLIndexNode));
+        return;
     }
 
     bool isBalanced(posType nodePointer)
