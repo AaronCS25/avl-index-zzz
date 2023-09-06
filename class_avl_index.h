@@ -7,7 +7,7 @@ struct AVLIndexNode
 
     posType leftChildren = -1;
     posType rigthChildren = -1;
-    posType parent = -1;
+    //posType parent = -1;
 
     int heigth = 0;
 };
@@ -82,7 +82,7 @@ class AVLIndex
             {
                 posType insertPointer = sizeof(AVLIndexHeader) + sizeof(AVLIndexNode) * header.nroNodos;
 
-                iNode.parent = cPointer;
+                //iNode.parent = cPointer;
                 file.seekp(insertPointer, std::ios::beg);
                 file.write((char*) &iNode, sizeof(AVLIndexNode));
 
@@ -102,7 +102,7 @@ class AVLIndex
             {
                 posType insertPointer = sizeof(AVLIndexHeader) + sizeof(AVLIndexNode) * header.nroNodos;
 
-                iNode.parent = cPointer;
+                //iNode.parent = cPointer;
                 file.seekp(insertPointer, std::ios::beg);
                 file.write((char*) &iNode, sizeof(AVLIndexNode));
 
@@ -129,6 +129,29 @@ class AVLIndex
         // * No balanceo.
         updateHeigth(cPointer);
         return; 
+    }
+
+    void leftRotation(posType nodePointer)
+    {
+        AVLIndexNode a, b, c, d;
+        file.seekg(nodePointer, std::ios::beg);
+        file.read((char*) &a, sizeof(AVLIndexNode));
+
+        posType childPointer = a.rigthChildren;
+
+        file.seekg(a.rigthChildren, std::ios::beg);
+        file.read((char*) &b, sizeof(AVLIndexNode));
+
+        a.rigthChildren = b.leftChildren;
+        b.leftChildren = nodePointer;
+        //b.parent = a.parent;
+        //a.parent = childPointer;
+
+        file.seekp(childPointer, std::ios::beg);
+        file.write((char*) &b, sizeof(AVLIndexNode));
+
+        file.seekp(nodePointer, std::ios::end);
+        file.write((char*) &a, sizeof(AVLIndexNode));
     }
 
     bool isBalanced(posType nodePointer)
