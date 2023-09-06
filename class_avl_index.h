@@ -119,6 +119,40 @@ class AVLIndex
         return; // Qué pasó, Master? Porqué se ejecuto esta línea.
     }
 
+    bool isBalanced(posType nodePointer)
+    {
+        AVLIndexNode node;
+        file.seekg(nodePointer, std::ios::beg);
+        file.read((char*) &node, sizeof(AVLIndexNode));
+        posType hLeft = heigth(node.leftChildren);
+        posType hRigth = heigth(node.rigthChildren);
+        if (std::abs(hRigth - hLeft) > 1) { return false; }
+        return true;        
+    }
+
+    void updateHeigth(posType nodePointer)
+    {
+        if (nodePointer == -1) { return; }
+        AVLIndexNode node;
+        file.seekg(nodePointer, std::ios::beg);
+        file.read((char*) &node, sizeof(AVLIndexNode));
+        posType hLeft = heigth(node.leftChildren);
+        posType hRigth = heigth(node.rigthChildren);
+        node.heigth = 1 + (hRigth > hLeft ? hRigth : hLeft);
+        file.seekp(nodePointer, std::ios::beg);
+        file.write((char*) &node, sizeof(AVLIndexNode));
+        return;
+    }
+
+    posType heigth(posType nodePointer)
+    {
+        if (nodePointer == -1) { return -1; }
+        AVLIndexNode node;
+        file.seekg(nodePointer, std::ios::beg);
+        file.read((char*) &node, sizeof(AVLIndexNode));
+        return node.heigth;
+    }
+
 public:
     //* Constructores:
     AVLIndex(std::string _indexFileName)

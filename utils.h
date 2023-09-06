@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <cmath>
 
 #include "class_data.h"
 #include "class_avl_index_header.h"
