@@ -77,7 +77,7 @@ class AVLIndex
 
         if (iNode.item > cNode.item)
         {
-            if (cNode.rigthChildren =! -1) { insert(cNode.rigthChildren, cNode, iNode); }
+            if (cNode.rigthChildren != -1) { insert(cNode.rigthChildren, cNode, iNode); }
             else
             {
                 posType insertPointer = sizeof(AVLIndexHeader) + sizeof(AVLIndexNode) * header.nroNodos;
@@ -144,8 +144,28 @@ class AVLIndex
 
         a.rigthChildren = b.leftChildren;
         b.leftChildren = childPointer;
-        //b.parent = a.parent;
-        //a.parent = childPointer;
+
+        file.seekp(nodePointer, std::ios::beg);
+        file.write((char*) &b, sizeof(AVLIndexNode));
+
+        file.seekp(childPointer, std::ios::end);
+        file.write((char*) &a, sizeof(AVLIndexNode));
+        return;
+    }
+
+    void rigthRotation(posType nodePointer)
+    {
+        AVLIndexNode a, b;
+        file.seekg(nodePointer, std::ios::beg);
+        file.read((char*) &a, sizeof(AVLIndexNode));
+
+        posType childPointer = a.leftChildren;
+
+        file.seekg(a.leftChildren, std::ios::beg);
+        file.read((char*) &b, sizeof(AVLIndexNode));
+
+        a.leftChildren = b.rigthChildren;
+        b.rigthChildren = childPointer;
 
         file.seekp(nodePointer, std::ios::beg);
         file.write((char*) &b, sizeof(AVLIndexNode));
