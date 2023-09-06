@@ -57,6 +57,7 @@ class AVLIndex
 
     void insert(posType cPointer, AVLIndexNode &cNode, AVLIndexNode &iNode)
     {
+        // * Empieza a insertar el nodo.
         if (cPointer == -1)
         {
             file.seekp(sizeof(AVLIndexHeader), std::ios::beg);
@@ -76,7 +77,7 @@ class AVLIndex
 
         if (iNode.item > cNode.item)
         {
-            if (cNode.rigthChildren =! -1) { return insert(cNode.rigthChildren, cNode, iNode); }
+            if (cNode.rigthChildren =! -1) { insert(cNode.rigthChildren, cNode, iNode); }
             else
             {
                 posType insertPointer = sizeof(AVLIndexHeader) + sizeof(AVLIndexNode) * header.nroNodos;
@@ -96,7 +97,7 @@ class AVLIndex
         }
         else if (iNode.item < cNode.item)
         {
-            if (cNode.leftChildren != -1) { return insert(cNode.leftChildren, cNode, iNode); }
+            if (cNode.leftChildren != -1) { insert(cNode.leftChildren, cNode, iNode); }
             else
             {
                 posType insertPointer = sizeof(AVLIndexHeader) + sizeof(AVLIndexNode) * header.nroNodos;
@@ -116,16 +117,31 @@ class AVLIndex
         }
         else
         { return ; }
-        return; // Qué pasó, Master? Porqué se ejecuto esta línea.
+        // * Ya se inserto el nodo.
+
+        // * Verifico si está balanceado:
+        std::cout << "Balanceo?" << std::endl;
+        if (!isBalanced(cPointer))
+        {
+            // * Balanceo
+            std::cout << "Necesita balancear!" << std::endl;
+        }
+        // * No balanceo.
+        updateHeigth(cPointer);
+        return; 
     }
 
     bool isBalanced(posType nodePointer)
     {
+        if (nodePointer == -1) { return true; }
         AVLIndexNode node;
         file.seekg(nodePointer, std::ios::beg);
         file.read((char*) &node, sizeof(AVLIndexNode));
         posType hLeft = heigth(node.leftChildren);
         posType hRigth = heigth(node.rigthChildren);
+        std::cout << "hLeft: " << hLeft << std::endl;
+        std::cout << "hRigth: " << hRigth << std::endl;
+        std::cout << std::endl;
         if (std::abs(hRigth - hLeft) > 1) { return false; }
         return true;        
     }
