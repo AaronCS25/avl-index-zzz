@@ -22,7 +22,7 @@ int main()
     std::cout << std::endl;
 
     AVLIndexNode result;
-    result = index.search(item4);
+    result = index.search(item3);
 
     std::cout << "result:" << std::endl;
     std::cout << "result.value: " << result.item.dato << std::endl;

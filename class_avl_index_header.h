@@ -1,5 +1,5 @@
 struct AVLIndexHeader
 {
     long rootPointer;
-    long nroNodos;
+    long lastDelete;
 };
