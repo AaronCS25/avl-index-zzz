@@ -6,7 +6,7 @@ struct AVLIndexNode
     posType posRecord;
 
     posType leftChildren = -1;
-    posType rigthChildren = -1;
+    posType rightChildren = -1;
     //posType parent = -1;
 
     int heigth = 0;
@@ -77,7 +77,7 @@ class AVLIndex
 
         if (iNode.item > cNode.item)
         {
-            if (cNode.rigthChildren != -1) { insert(cNode.rigthChildren, cNode, iNode); }
+            if (cNode.rightChildren != -1) { insert(cNode.rightChildren, cNode, iNode); }
             else
             {
                 posType insertPointer = sizeof(AVLIndexHeader) + sizeof(AVLIndexNode) * header.nroNodos;
@@ -86,7 +86,7 @@ class AVLIndex
                 file.seekp(insertPointer, std::ios::beg);
                 file.write((char*) &iNode, sizeof(AVLIndexNode));
 
-                cNode.rigthChildren = insertPointer;
+                cNode.rightChildren = insertPointer;
                 file.seekp(cPointer, std::ios::beg);
                 file.write((char*) &cNode, sizeof(AVLIndexNode));
 
@@ -117,18 +117,36 @@ class AVLIndex
         }
         else
         { return ; }
-        // * Ya se inserto el nodo.
-
-        // * Verifico si está balanceado:
-        std::cout << "Balanceo?" << std::endl;
+        
         if (!isBalanced(cPointer))
         {
-            // * Balanceo
-            std::cout << "Necesita balancear!" << std::endl;
+            balance(cPointer);
         }
-        // * No balanceo.
         updateHeigth(cPointer);
         return; 
+    }
+
+    void balance(posType nodePointer)
+    {
+        if (nodePointer == -1) { return; }
+        
+        AVLIndexNode node;
+        file.seekg(nodePointer, std::ios::beg);
+        file.read((char*) &node, sizeof(AVLIndexNode));
+
+        int balance = balancingFactor(nodePointer);
+
+        if (balance > 1) // Esta cargado a la izquierda?
+        {
+            if (balancingFactor(node.leftChildren) <= -1) { leftRotation(node.leftChildren); }
+            rightRotation(nodePointer);
+        }
+        else if (balance < -1) // Esta cargado a la derecha?
+        {
+            if (balancingFactor(node.rightChildren) >= 1) { rightRotation(node.rightChildren); }
+            leftRotation(nodePointer);
+        }
+        return;
     }
 
     void leftRotation(posType nodePointer)
@@ -137,12 +155,12 @@ class AVLIndex
         file.seekg(nodePointer, std::ios::beg);
         file.read((char*) &a, sizeof(AVLIndexNode));
 
-        posType childPointer = a.rigthChildren;
+        posType childPointer = a.rightChildren;
 
-        file.seekg(a.rigthChildren, std::ios::beg);
+        file.seekg(a.rightChildren, std::ios::beg);
         file.read((char*) &b, sizeof(AVLIndexNode));
 
-        a.rigthChildren = b.leftChildren;
+        a.rightChildren = b.leftChildren;
         b.leftChildren = childPointer;
 
         file.seekp(nodePointer, std::ios::beg);
@@ -153,7 +171,7 @@ class AVLIndex
         return;
     }
 
-    void rigthRotation(posType nodePointer)
+    void rightRotation(posType nodePointer)
     {
         AVLIndexNode a, b;
         file.seekg(nodePointer, std::ios::beg);
@@ -164,8 +182,8 @@ class AVLIndex
         file.seekg(a.leftChildren, std::ios::beg);
         file.read((char*) &b, sizeof(AVLIndexNode));
 
-        a.leftChildren = b.rigthChildren;
-        b.rigthChildren = childPointer;
+        a.leftChildren = b.rightChildren;
+        b.rightChildren = childPointer;
 
         file.seekp(nodePointer, std::ios::beg);
         file.write((char*) &b, sizeof(AVLIndexNode));
@@ -178,16 +196,17 @@ class AVLIndex
     bool isBalanced(posType nodePointer)
     {
         if (nodePointer == -1) { return true; }
+        if (std::abs(balancingFactor(nodePointer)) > 1) { return false; }
+        return true;        
+    }
+
+    int balancingFactor(posType nodePointer)
+    {
+        if (nodePointer == -1) { return 0; }
         AVLIndexNode node;
         file.seekg(nodePointer, std::ios::beg);
         file.read((char*) &node, sizeof(AVLIndexNode));
-        posType hLeft = heigth(node.leftChildren);
-        posType hRigth = heigth(node.rigthChildren);
-        std::cout << "hLeft: " << hLeft << std::endl;
-        std::cout << "hRigth: " << hRigth << std::endl;
-        std::cout << std::endl;
-        if (std::abs(hRigth - hLeft) > 1) { return false; }
-        return true;        
+        return heigth(node.leftChildren) - heigth(node.rightChildren);
     }
 
     void updateHeigth(posType nodePointer)
@@ -197,14 +216,14 @@ class AVLIndex
         file.seekg(nodePointer, std::ios::beg);
         file.read((char*) &node, sizeof(AVLIndexNode));
         posType hLeft = heigth(node.leftChildren);
-        posType hRigth = heigth(node.rigthChildren);
+        posType hRigth = heigth(node.rightChildren);
         node.heigth = 1 + (hRigth > hLeft ? hRigth : hLeft);
         file.seekp(nodePointer, std::ios::beg);
         file.write((char*) &node, sizeof(AVLIndexNode));
         return;
     }
 
-    posType heigth(posType nodePointer)
+    long heigth(posType nodePointer)
     {
         if (nodePointer == -1) { return -1; }
         AVLIndexNode node;
