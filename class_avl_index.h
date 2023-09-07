@@ -7,9 +7,9 @@ struct AVLIndexNode
 
     posType leftChildren = -1;
     posType rightChildren = -1;
-    //posType parent = -1;
+    
 
-    int heigth = 0;
+    int height = 0;
 };
 
 class AVLIndex
@@ -57,15 +57,12 @@ class AVLIndex
 
     void insert(posType cPointer, AVLIndexNode &cNode, AVLIndexNode &iNode)
     {
-        // * Empieza a insertar el nodo.
         if (cPointer == -1)
         {
             file.seekp(sizeof(AVLIndexHeader), std::ios::beg);
             file.write((char*) &iNode, sizeof(AVLIndexNode));
             header.rootPointer = sizeof(AVLIndexHeader);
             header.nroNodos = header.nroNodos + 1;
-
-            
 
             file.seekp(0, std::ios::beg);
             file.write((char*) &header, sizeof(AVLIndexHeader));
@@ -115,40 +112,54 @@ class AVLIndex
                 file.write((char*) &header, sizeof(AVLIndexHeader));
             }
         }
-        else
-        { return ; }
-        
+        else { return ; }
+
+        updateHeigth(cPointer);
         if (!isBalanced(cPointer))
         {
+            std::cout << "va a balancear!" << std::endl;
             balance(cPointer);
         }
-        updateHeigth(cPointer);
         return; 
     }
 
+    //* check
     void balance(posType nodePointer)
     {
         if (nodePointer == -1) { return; }
-        
+        std::cout << "inicia el balanceo!" << std::endl;
         AVLIndexNode node;
         file.seekg(nodePointer, std::ios::beg);
         file.read((char*) &node, sizeof(AVLIndexNode));
+        std::cout << "Nodo: \n";
+        std::cout << "nodo.item: " << node.item.dato << std::endl;
+        std::cout << std::endl;
 
         int balance = balancingFactor(nodePointer);
+        std::cout << "balancing Factor: " << balance << std::endl;
 
         if (balance > 1) // Esta cargado a la izquierda?
         {
-            if (balancingFactor(node.leftChildren) <= -1) { leftRotation(node.leftChildren); }
+            std::cout << "balanceado a la izquierda " << std::endl;
+            if (balancingFactor(node.leftChildren) <= -1) { 
+                std::cout << "se hará rotación a la izuquierda!\n" ;
+                leftRotation(node.leftChildren); }
+            std::cout << "se hará rotación a la derecha!\n" ;
             rightRotation(nodePointer);
         }
         else if (balance < -1) // Esta cargado a la derecha?
         {
-            if (balancingFactor(node.rightChildren) >= 1) { rightRotation(node.rightChildren); }
+            std::cout << "balanceado a la derecha " << std::endl;
+            if (balancingFactor(node.rightChildren) >= 1) { 
+                std::cout << "se hará rotación a la derecha!\n" ;
+                rightRotation(node.rightChildren); }
+                std::cout << "se hará rotación a la izuquierda!\n" ;
             leftRotation(nodePointer);
         }
         return;
     }
 
+    //* check
     void leftRotation(posType nodePointer)
     {
         AVLIndexNode a, b;
@@ -166,11 +177,16 @@ class AVLIndex
         file.seekp(nodePointer, std::ios::beg);
         file.write((char*) &b, sizeof(AVLIndexNode));
 
-        file.seekp(childPointer, std::ios::end);
+        file.seekp(childPointer, std::ios::beg);
         file.write((char*) &a, sizeof(AVLIndexNode));
+
+        updateHeigth(childPointer);
+        updateHeigth(nodePointer);
+
         return;
     }
 
+    //* check
     void rightRotation(posType nodePointer)
     {
         AVLIndexNode a, b;
@@ -188,48 +204,66 @@ class AVLIndex
         file.seekp(nodePointer, std::ios::beg);
         file.write((char*) &b, sizeof(AVLIndexNode));
 
-        file.seekp(childPointer, std::ios::end);
+        file.seekp(childPointer, std::ios::beg);
         file.write((char*) &a, sizeof(AVLIndexNode));
+
+        updateHeigth(childPointer);
+        updateHeigth(nodePointer);
         return;
     }
 
+    //* check
     bool isBalanced(posType nodePointer)
     {
         if (nodePointer == -1) { return true; }
         if (std::abs(balancingFactor(nodePointer)) > 1) { return false; }
-        return true;        
+        return true;
     }
 
+    //* check
     int balancingFactor(posType nodePointer)
     {
         if (nodePointer == -1) { return 0; }
         AVLIndexNode node;
         file.seekg(nodePointer, std::ios::beg);
         file.read((char*) &node, sizeof(AVLIndexNode));
-        return heigth(node.leftChildren) - heigth(node.rightChildren);
+        return height(node.leftChildren) - height(node.rightChildren);
     }
 
+    //* check
     void updateHeigth(posType nodePointer)
     {
         if (nodePointer == -1) { return; }
         AVLIndexNode node;
         file.seekg(nodePointer, std::ios::beg);
         file.read((char*) &node, sizeof(AVLIndexNode));
-        posType hLeft = heigth(node.leftChildren);
-        posType hRigth = heigth(node.rightChildren);
-        node.heigth = 1 + (hRigth > hLeft ? hRigth : hLeft);
+        posType hLeft = height(node.leftChildren);
+        posType hRigth = height(node.rightChildren);
+        node.height = 1 + (hRigth > hLeft ? hRigth : hLeft);
         file.seekp(nodePointer, std::ios::beg);
         file.write((char*) &node, sizeof(AVLIndexNode));
         return;
     }
-
-    long heigth(posType nodePointer)
+    
+    //* check
+    long height(posType nodePointer)
     {
         if (nodePointer == -1) { return -1; }
         AVLIndexNode node;
         file.seekg(nodePointer, std::ios::beg);
         file.read((char*) &node, sizeof(AVLIndexNode));
-        return node.heigth;
+        return node.height;
+    }
+
+    AVLIndexNode search(posType currentPointer, AVLIndexNode &cNode, Data &item)
+    {
+        if (currentPointer == -1) { throw std::runtime_error("No se ha encontrado el elemento!"); }
+
+        file.seekg(currentPointer, std::ios::beg);
+        file.read((char*) &cNode, sizeof(AVLIndexNode));
+        if (item > cNode.item) { return search(cNode.rightChildren, cNode, item); }
+        else if (item < cNode.item) { return search(cNode.leftChildren, cNode, item); }
+        else { return cNode; }
     }
 
 public:
@@ -250,14 +284,22 @@ public:
 
         AVLIndexNode currentNode;
 
-        std::cout << "header:" << std::endl;
-        std::cout << "header-Root Pointer: " << this->header.rootPointer << std::endl;
-        std::cout << "header-nroNodos: " << this->header.nroNodos << std::endl;
-        std::cout << std::endl;
-
         insert(header.rootPointer, currentNode, insertNode);
 
         file.close();
         return true;
+    }
+
+    AVLIndexNode search(Data item)
+    {
+        file.open(this->indexFileName, std::ios::in | std::ios::out | std::ios::binary);
+        if (!file.is_open()) { throw std::runtime_error("No se pudo abrir el archivo AVLIndex!"); }
+        
+        AVLIndexNode searchNode;
+
+        search(header.rootPointer, searchNode, item);
+
+        file.close();
+        return searchNode;
     }
 };
