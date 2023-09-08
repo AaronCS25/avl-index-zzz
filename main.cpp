@@ -4,12 +4,16 @@
 int main()
 {
     AVLIndex index("avlIndex.dat");
-    Data item1, item2, item3, item4, item5;
-    item1.dato = 30;
-    item2.dato = 15;
-    item3.dato = 20;
-    item4.dato = 150;
-    item5.dato = 50;
+    Data item1, item2, item3, item4, item5, item6, item7, item8, item9, item10;
+    item1.dato = 1;
+    item2.dato = 2;
+    item3.dato = 3;
+    item4.dato = 4;
+    item5.dato = 5;
+    item6.dato = 6;
+    item7.dato = 7;
+    item8.dato = 8;
+    item9.dato = 9;
 
 
     index.insert(item1);
@@ -17,19 +21,19 @@ int main()
     index.insert(item3);
     index.insert(item4);
     index.insert(item5);
-    
-    std::cout << "Hello Micho!" << std::endl;
-    std::cout << std::endl;
+    index.insert(item6);
+    index.insert(item7);
+    index.insert(item8);
+    index.insert(item9);
 
-    AVLIndexNode result;
-    result = index.search(item3);
+    index.displayPretty();
 
-    std::cout << "result:" << std::endl;
-    std::cout << "result.value: " << result.item.dato << std::endl;
-    std::cout << "result.left: " << result.leftChildren << std::endl;
-    std::cout << "result.right: " << result.rightChildren << std::endl;
-    std::cout << "result.height: " << result.height << std::endl;
-    std::cout << std::endl;
+    index.removeIndex(item1);
+    index.removeIndex(item3);
+    index.removeIndex(item6);
+    index.removeIndex(item4);
+
+    index.displayPretty();
 
     return 0;
 }
