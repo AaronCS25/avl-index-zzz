@@ -11,6 +11,17 @@ struct AVLIndexNode
     posType nextDelete = -1;
 
     int height = 0;
+
+    friend std::ostream& operator<<(std::ostream& os, const AVLIndexNode& node)
+    {
+        os << "Data: " << node.item.dato << "\n";
+        os << "Left Children: " << node.leftChildren << "\n";
+        os << "Right Children: " << node.rightChildren << "\n";
+        os << "Next Delete: " << node.nextDelete << "\n";
+        os << "Height: " << node.height << "\n\n";
+        return os;
+    }
+
 };
 
 class AVLIndex
@@ -412,7 +423,33 @@ class AVLIndex
         displayPretty(prefix + (isLeft ? "|   " : "    "), cNode.rightChildren, false);
         return;
     }
-    
+
+    void searchIndexsByRange(posType cPointer, AVLIndexNode &cNode, std::vector<AVLIndexNode> &cVector, Data &begin, Data &end)
+    {
+        if (cPointer == -1) { return; }
+        
+        file.seekg(cPointer, std::ios::beg);
+        file.read((char*) &cNode, sizeof(AVLIndexNode));
+
+        if (cNode.item > begin)
+        {
+            searchIndexsByRange(cNode.leftChildren, cNode, cVector, begin, end);
+            file.seekg(cPointer, std::ios::beg);
+            file.read((char*) &cNode, sizeof(AVLIndexNode));
+        }
+        if (cNode.item >= begin && cNode.item <= end) { cVector.push_back(cNode); }
+        if (cNode.item < end)
+        {
+            searchIndexsByRange(cNode.rightChildren, cNode, cVector, begin, end);
+            file.seekg(cPointer, std::ios::beg);
+            file.read((char*) &cNode, sizeof(AVLIndexNode));
+        }
+
+        return;
+    }
+
+
+
 public:
     //* Constructores:
     AVLIndex(std::string _indexFileName)
@@ -461,6 +498,20 @@ public:
 
         file.close();
         return isRemoved;
+    }
+
+    std::vector<AVLIndexNode> searchIndexsByRange(Data start, Data end)
+    {
+        file.open(this->indexFileName, std::ios::in | std::ios::out | std::ios::binary);
+        if (!file.is_open()) { throw std::runtime_error("No se pudo abrir el archivo AVLIndex!"); }
+
+        AVLIndexNode node;
+        std::vector<AVLIndexNode> vector;
+
+        searchIndexsByRange(header.rootPointer, node, vector, start, end);
+
+        file.close();
+        return vector;
     }
 
     void displayPretty()

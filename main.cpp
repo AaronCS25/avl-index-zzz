@@ -28,12 +28,22 @@ int main()
 
     index.displayPretty();
 
-    index.removeIndex(item1);
-    index.removeIndex(item3);
-    index.removeIndex(item6);
-    index.removeIndex(item4);
+    std::vector<AVLIndexNode> vector;
 
-    index.displayPretty();
+    vector = index.searchIndexsByRange(item3, item8);
+
+    for (int i = 0; i < vector.size(); i++)
+    {
+        std::cout << vector[i];
+    }
+    
+
+    // index.removeIndex(item1);
+    // index.removeIndex(item3);
+    // index.removeIndex(item6);
+    // index.removeIndex(item4);
+
+    // index.displayPretty();
 
     return 0;
 }
