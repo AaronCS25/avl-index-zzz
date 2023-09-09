@@ -6,5 +6,6 @@
 #include <fstream>
 #include <cmath>
 #include <vector>
+#include <ctime>
 
 #endif //LIBRARIES_H

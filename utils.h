@@ -1,12 +1,10 @@
-#include <iostream>
-#include <string>
-#include <fstream>
-#include <cmath>
-#include <vector>
+#ifndef UTILS_H
+#define UTILS_H
 
+#include "libraries.h"
 #include "class_data.h"
-#include "class_avl_index_header.h"
 
 using posType = long;
-
 using HEADER_TYPE = long;
+
+#endif // UTILS_H
