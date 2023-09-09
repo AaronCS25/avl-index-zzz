@@ -16,7 +16,7 @@ struct Data {
 
     bool operator==(const Data& other) const { return this->key == other.key; }
 
-    bool operator<(const Data& other) const { return this->key < other.key }
+    bool operator<(const Data& other) const { return this->key < other.key; }
     
     bool operator<=(const Data& other) const { return this->key <= other.key; }
 
