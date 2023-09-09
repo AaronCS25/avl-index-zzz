@@ -1,28 +1,33 @@
+#ifndef AVL_INDEX_H
+#define AVL_INDEX_H
+
 #include "utils.h"
+#include "class_avl_index_node.h"
+#include "class_avl_index_header.h"
 
-struct AVLIndexNode
-{
-    Data item;
-    posType posRecord;
+// struct AVLIndexNode
+// {
+//     Data data;
+//     posType posRecord;
 
-    posType leftChildren = -1;
-    posType rightChildren = -1;
+//     posType leftChildren = -1;
+//     posType rightChildren = -1;
 
-    posType nextDelete = -1;
+//     posType nextDelete = -1;
 
-    int height = 0;
+//     int height = 0;
 
-    friend std::ostream& operator<<(std::ostream& os, const AVLIndexNode& node)
-    {
-        os << "Data: " << node.item.dato << "\n";
-        os << "Left Children: " << node.leftChildren << "\n";
-        os << "Right Children: " << node.rightChildren << "\n";
-        os << "Next Delete: " << node.nextDelete << "\n";
-        os << "Height: " << node.height << "\n\n";
-        return os;
-    }
+//     friend std::ostream& operator<<(std::ostream& os, const AVLIndexNode& node)
+//     {
+//         os << "Data: " << node.data.numero << "\n";
+//         os << "Left Children: " << node.leftChildren << "\n";
+//         os << "Right Children: " << node.rightChildren << "\n";
+//         os << "Next Delete: " << node.nextDelete << "\n";
+//         os << "Height: " << node.height << "\n\n";
+//         return os;
+//     }
 
-};
+// };
 
 class AVLIndex
 {
@@ -85,7 +90,7 @@ class AVLIndex
         file.seekg(cPointer, std::ios::beg);
         file.read((char*) &cNode, sizeof(AVLIndexNode));
 
-        if (iNode.item > cNode.item)
+        if (iNode.data > cNode.data)
         {
             if (cNode.rightChildren != -1) { insert(cNode.rightChildren, cNode, iNode); }
             else
@@ -112,7 +117,7 @@ class AVLIndex
                 file.write((char*) &cNode, sizeof(AVLIndexNode));
             }
         }
-        else if (iNode.item < cNode.item)
+        else if (iNode.data < cNode.data)
         {
             if (cNode.leftChildren != -1) { insert(cNode.leftChildren, cNode, iNode); }
             else
@@ -274,8 +279,8 @@ class AVLIndex
 
         file.seekg(currentPointer, std::ios::beg);
         file.read((char*) &cNode, sizeof(AVLIndexNode));
-        if (item > cNode.item) { return search(cNode.rightChildren, cNode, item); }
-        else if (item < cNode.item) { return search(cNode.leftChildren, cNode, item); }
+        if (item > cNode.data) { return search(cNode.rightChildren, cNode, item); }
+        else if (item < cNode.data) { return search(cNode.leftChildren, cNode, item); }
         else { return cNode; }
     }
 
@@ -300,12 +305,12 @@ class AVLIndex
         file.seekg(cPointer, std::ios::beg);
         file.read((char*) &cNode, sizeof(AVLIndexNode)); 
 
-        if (item > cNode.item)
+        if (item > cNode.data)
         {
             pPointer = cPointer;
             if (!removeIndex(cNode.rightChildren, pPointer, cNode, item)) { return false; }
         }
-        else if (item < cNode.item)
+        else if (item < cNode.data)
         {
             pPointer = cPointer;
             if (!removeIndex(cNode.leftChildren, pPointer, cNode, item)) { return false; }
@@ -384,25 +389,38 @@ class AVLIndex
             else
             {
                 posType newPos = maxNode(cNode.leftChildren);
-                AVLIndexNode newNode;
+                AVLIndexNode tempNode;
 
                 file.seekg(newPos, std::ios::beg);
-                file.read((char*) &newNode, sizeof(AVLIndexNode));
+                file.read((char*) &tempNode, sizeof(AVLIndexNode));
 
-                Data tempItem = newNode.item;
-
-                AVLIndexNode tempNode;
+                Data tempItem = tempNode.data;
                 removeIndex(header.rootPointer, -1, tempNode, tempItem);
-
-                cNode.item = tempItem;
-                file.seekp(cPointer, std::ios::beg);
-                file.write((char*) &cNode, sizeof(AVLIndexNode));
+                fixValue(cPointer, tempNode, cNode.data, tempItem);
             }
         }
 
         updateHeigth(cPointer);
         if (!isBalanced(cPointer)) {  balance(cPointer); }
         return true;
+    }
+
+    void fixValue(posType cPointer, AVLIndexNode &cNode, Data &item1, Data &item2)
+    {
+        if (cPointer == -1) { return; }
+        
+        file.seekg(cPointer, std::ios::beg);
+        file.read((char*) &cNode, sizeof(AVLIndexNode));
+
+        if (cNode.data > item1) { return fixValue(cNode.leftChildren, cNode, item1, item2); }
+        else if (cNode.data < item1) { return fixValue(cNode.rightChildren, cNode, item1, item2); }
+        else
+        {
+            cNode.data = item2;
+            file.seekp(cPointer, std::ios::beg);
+            file.write((char*) &cNode, sizeof(AVLIndexNode));
+        }
+        return;
     }
 
     //* check
@@ -417,7 +435,7 @@ class AVLIndex
  
         std::cout << prefix;
         std::cout << (isLeft ? "|--" : "|__");
-        std::cout << cNode.item.dato << "(" << cNode.height << ")" << std::endl;
+        std::cout << cNode.data.numero << "(" << cNode.height << ")" << std::endl;
 
         displayPretty(prefix + (isLeft ? "|   " : "    "), cNode.leftChildren, true);
         displayPretty(prefix + (isLeft ? "|   " : "    "), cNode.rightChildren, false);
@@ -431,14 +449,14 @@ class AVLIndex
         file.seekg(cPointer, std::ios::beg);
         file.read((char*) &cNode, sizeof(AVLIndexNode));
 
-        if (cNode.item > begin)
+        if (cNode.data > begin)
         {
             searchIndexsByRange(cNode.leftChildren, cNode, cVector, begin, end);
             file.seekg(cPointer, std::ios::beg);
             file.read((char*) &cNode, sizeof(AVLIndexNode));
         }
-        if (cNode.item >= begin && cNode.item <= end) { cVector.push_back(cNode); }
-        if (cNode.item < end)
+        if (cNode.data >= begin && cNode.data <= end) { cVector.push_back(cNode); }
+        if (cNode.data < end)
         {
             searchIndexsByRange(cNode.rightChildren, cNode, cVector, begin, end);
             file.seekg(cPointer, std::ios::beg);
@@ -464,7 +482,7 @@ public:
         if (!file.is_open()) { throw std::runtime_error("No se pudo abrir el archivo AVLIndex!"); }
 
         AVLIndexNode insertNode;
-        insertNode.item = item;
+        insertNode.data = item;
 
         AVLIndexNode currentNode;
 
@@ -529,3 +547,5 @@ public:
         return;
     }
 };
+
+#endif // AVL_INDEX_H
