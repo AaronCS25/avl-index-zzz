@@ -2,7 +2,6 @@
 #define AVL_INDEX_NODE_HPP
 
 #include "index.hpp"
-#include "record.hpp"
 
 template<typename KEY_TYPE = default_data_type>
 struct AVLIndexNode : public Record<KEY_TYPE>
