@@ -9,22 +9,34 @@ struct Data {
 
     Data(){}
 
-    Data(KEY_TYPE _key) { this->key = _key; }
+    Data(KEY_TYPE _key) {
+        this->key = _key;
+    }
 
     friend std::ostream& operator<<(std::ostream& stream, const Data<KEY_TYPE>& data) {
         stream<<" | key: "<<data.key;
         return stream;
     }
 
-    bool operator==(const Data<KEY_TYPE>& other) const { return this->key == other.key; }
+    bool operator==(const Data<KEY_TYPE>& other) const {
+        return this->key == other.key;
+    }
 
-    bool operator<(const Data<KEY_TYPE>& other) const { return this->key < other.key; }
+    bool operator<(const Data<KEY_TYPE>& other) const {
+        return this->key < other.key;
+    }
     
-    bool operator<=(const Data<KEY_TYPE>& other) const { return this->key <= other.key; }
+    bool operator<=(const Data<KEY_TYPE>& other) const {
+        return this->key <= other.key;
+    }
 
-    bool operator>(const Data<KEY_TYPE>& other) const { return this->key > other.key; }
+    bool operator>(const Data<KEY_TYPE>& other) const {
+        return this->key > other.key;
+    }
 
-    bool operator>=(const Data<KEY_TYPE>& other) const { return this->key >= other.key; }
+    bool operator>=(const Data<KEY_TYPE>& other) const {
+        return this->key >= other.key;
+    }
 };
 
 #endif // DATA_HPP
