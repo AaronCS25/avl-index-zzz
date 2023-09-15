@@ -37,7 +37,7 @@ class AVLIndex : public Index<KEY_TYPE>
 
     bool removeIndex(physical_pos cPointer, physical_pos pPointer, AVLIndexNode<KEY_TYPE> &cNode, Data<KEY_TYPE> item, Response &response);
 
-    void fixValue(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &cNode, Data<KEY_TYPE> &item1, Data<KEY_TYPE> &item2);
+    void fixValue(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &cNode, Data<KEY_TYPE> &item1, AVLIndexNode<KEY_TYPE> &tempNode);
 
     void displayPretty(const std::string &prefix, physical_pos cPointer, bool isLeft);
 

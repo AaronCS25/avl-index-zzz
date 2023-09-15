@@ -295,12 +295,12 @@ bool AVLIndex<KEY_TYPE>::removeIndex(physical_pos cPointer, physical_pos pPointe
     if (item > cNode.data)
     {
         pPointer = cPointer;
-        if (!erase(cNode.rightChildren, pPointer, cNode, item)) { return false; }
+        if (!erase(cNode.rightChildren, pPointer, cNode, item, response)) { return false; }
     }
     else if (item < cNode.data)
     {
         pPointer = cPointer;
-        if (!erase(cNode.leftChildren, pPointer, cNode, item)) { return false; }
+        if (!erase(cNode.leftChildren, pPointer, cNode, item, response)) { return false; }
     }
     else
     {
@@ -384,9 +384,10 @@ bool AVLIndex<KEY_TYPE>::removeIndex(physical_pos cPointer, physical_pos pPointe
             file.seekg(newPos, std::ios::beg);
             file.read((char*) &tempNode, sizeof(AVLIndexNode<KEY_TYPE>));
 
-            Data<KEY_TYPE> tempItem = tempNode.data;
-            erase(header.rootPointer, -1, tempNode, tempItem);
-            fixValue(cPointer, tempNode, cNode.data, tempItem);
+            response.records.push_back(cPointer);
+            AVLIndexNode<KEY_TYPE> otherNode;
+            erase(header.rootPointer, -1, otherNode, tempNode.data);
+            fixValue(cPointer, otherNode, cNode.data, tempNode);
         }
     }
 
@@ -396,18 +397,20 @@ bool AVLIndex<KEY_TYPE>::removeIndex(physical_pos cPointer, physical_pos pPointe
 }
 
 template <typename KEY_TYPE>
-void AVLIndex<KEY_TYPE>::fixValue(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &cNode, Data<KEY_TYPE> &item1, Data<KEY_TYPE> &item2)
+void AVLIndex<KEY_TYPE>::fixValue(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &cNode, Data<KEY_TYPE> &item1, AVLIndexNode<KEY_TYPE> &tempNode)
 {
     if (cPointer == -1) { return; }
     
     file.seekg(cPointer, std::ios::beg);
     file.read((char*) &cNode, sizeof(AVLIndexNode<KEY_TYPE>));
 
-    if (cNode.data > item1) { return fixValue(cNode.leftChildren, cNode, item1, item2); }
-    else if (cNode.data < item1) { return fixValue(cNode.rightChildren, cNode, item1, item2); }
+    if (cNode.data > item1) { return fixValue(cNode.leftChildren, cNode, item1, tempNode); }
+    else if (cNode.data < item1) { return fixValue(cNode.rightChildren, cNode, item1, tempNode); }
     else
     {
-        cNode.data = item2;
+        cNode.data = tempNode.data;
+        cNode.raw_pos = tempNode.raw_pos;
+        cNode.dup_pos = tempNode.dup_pos;
         file.seekp(cPointer, std::ios::beg);
         file.write((char*) &cNode, sizeof(AVLIndexNode<KEY_TYPE>));
     }
@@ -479,7 +482,7 @@ Response AVLIndex<KEY_TYPE>::add(Data<KEY_TYPE> data, physical_pos raw_pos)
     catch(std::runtime_error)
     {
         response.stopTimer();
-        throw std::runtime_error("Couldn't search");
+        throw std::runtime_error("Couldn't add");
     }
 
     response.stopTimer();
@@ -505,9 +508,10 @@ Response AVLIndex<KEY_TYPE>::search(Data<KEY_TYPE> item)
         // TODO: MODIFICAR 
         response.records.push_back(searchNode.raw_pos);
     }
-    catch(const std::exception& e)
+    catch(std::runtime_error)
     {
-        std::cerr << e.what() << '\n';
+        response.stopTimer();
+        throw std::runtime_error("Couldn't search");
     }
 
     response.stopTimer();
@@ -527,13 +531,13 @@ Response AVLIndex<KEY_TYPE>::erase(Data<KEY_TYPE> item)
     {
         AVLIndexNode currentNode;
 
-        bool isRemoved = erase(header.rootPointer, -1, currentNode, item);
+        bool isRemoved = erase(header.rootPointer, -1, currentNode, item, response);
     }
-    catch(const std::exception& e)
+    catch(std::runtime_error)
     {
-        std::cerr << e.what() << '\n';
+        response.stopTimer();
+        throw std::runtime_error("Couldn't erase");
     }
-    
 
     response.stopTimer();
     file.close();
