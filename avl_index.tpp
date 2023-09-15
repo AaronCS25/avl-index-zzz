@@ -432,7 +432,7 @@ void AVLIndex<KEY_TYPE>::displayPretty(const std::string &prefix, physical_pos c
 
     std::cout << prefix;
     std::cout << (isLeft ? "|--" : "|__");
-    std::cout << cNode.data.numero << "(" << cNode.height << ")" << std::endl;
+    std::cout << cNode.data.key << "(" << cNode.height << ")" << std::endl;
 
     displayPretty(prefix + (isLeft ? "|   " : "    "), cNode.leftChildren, true);
     displayPretty(prefix + (isLeft ? "|   " : "    "), cNode.rightChildren, false);
