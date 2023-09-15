@@ -3,6 +3,7 @@
 
 #include "avl_index.hpp"
 
+//*
 template <typename KEY_TYPE>
 void AVLIndex<KEY_TYPE>::initFile()
 {
@@ -17,6 +18,7 @@ void AVLIndex<KEY_TYPE>::initFile()
         return;
 }
 
+//*
 template <typename KEY_TYPE>
 void AVLIndex<KEY_TYPE>::initIndex()
 {
@@ -42,6 +44,7 @@ void AVLIndex<KEY_TYPE>::initIndex()
     return;
 }
 
+//!
 template <typename KEY_TYPE>
 void AVLIndex<KEY_TYPE>::insert(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &cNode, AVLIndexNode<KEY_TYPE> &iNode, Response &response)
 {
@@ -126,6 +129,7 @@ void AVLIndex<KEY_TYPE>::insert(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &c
         return;
 }
 
+//*
 template <typename KEY_TYPE>
 void AVLIndex<KEY_TYPE>::balance(physical_pos nodePointer)
 {
@@ -151,6 +155,7 @@ void AVLIndex<KEY_TYPE>::balance(physical_pos nodePointer)
     return;
 }
 
+//*
 template <typename KEY_TYPE>
 void AVLIndex<KEY_TYPE>::leftRotation(physical_pos nodePointer)
 {
@@ -265,6 +270,7 @@ AVLIndexNode<KEY_TYPE> AVLIndex<KEY_TYPE>::search(physical_pos currentPointer, A
     else { return cNode; }
 }
 
+//*
 template <typename KEY_TYPE>
 physical_pos AVLIndex<KEY_TYPE>::maxNode(physical_pos nodePointer)
 {
@@ -279,7 +285,7 @@ physical_pos AVLIndex<KEY_TYPE>::maxNode(physical_pos nodePointer)
 }
 
 template <typename KEY_TYPE>
-bool AVLIndex<KEY_TYPE>::removeIndex(physical_pos cPointer, physical_pos pPointer, AVLIndexNode<KEY_TYPE> &cNode, Data<KEY_TYPE> item)
+bool AVLIndex<KEY_TYPE>::removeIndex(physical_pos cPointer, physical_pos pPointer, AVLIndexNode<KEY_TYPE> &cNode, Data<KEY_TYPE> item, Response &response)
 {
     if (cPointer == -1) { return false; }
 
@@ -313,6 +319,7 @@ bool AVLIndex<KEY_TYPE>::removeIndex(physical_pos cPointer, physical_pos pPointe
                 file.write((char*) &pNode, sizeof(AVLIndexNode<KEY_TYPE>));
             }
 
+            response.records.push_back(cPointer);
             cNode.nextDelete = header.lastDelete;
             file.seekp(cPointer, std::ios::beg);
             file.write((char*) &cNode, sizeof(AVLIndexNode<KEY_TYPE>));
@@ -336,6 +343,7 @@ bool AVLIndex<KEY_TYPE>::removeIndex(physical_pos cPointer, physical_pos pPointe
                 file.write((char*) &pNode, sizeof(AVLIndexNode<KEY_TYPE>));
             }
 
+            response.records.push_back(cPointer);
             cNode.nextDelete = header.lastDelete;
             file.seekp(cPointer, std::ios::beg);
             file.write((char*) &cNode, sizeof(AVLIndexNode<KEY_TYPE>));
@@ -359,6 +367,7 @@ bool AVLIndex<KEY_TYPE>::removeIndex(physical_pos cPointer, physical_pos pPointe
                 file.write((char*) &pNode, sizeof(AVLIndexNode<KEY_TYPE>));
             }
 
+            response.records.push_back(cPointer);
             cNode.nextDelete = header.lastDelete;
             file.seekp(cPointer, std::ios::beg);
             file.write((char*) &cNode, sizeof(AVLIndexNode<KEY_TYPE>));
@@ -457,7 +466,7 @@ Response AVLIndex<KEY_TYPE>::add(Data<KEY_TYPE> data, physical_pos raw_pos)
     file.open(this->indexFileName, std::ios::in | std::ios::out | std::ios::binary);
     if (!file.is_open()) { throw std::runtime_error("No se pudo abrir el archivo AVLIndex!"); }
 
-    response.start_time();
+    response.startTimer();
 
     try
     {
@@ -485,7 +494,7 @@ Response AVLIndex<KEY_TYPE>::search(Data<KEY_TYPE> item)
     Response response;
     file.open(this->indexFileName, std::ios::in | std::ios::out | std::ios::binary);
     if (!file.is_open()) { throw std::runtime_error("No se pudo abrir el archivo AVLIndex!"); }
-    response.start_time();
+    response.startTimer();
 
     try
     {
@@ -509,15 +518,26 @@ Response AVLIndex<KEY_TYPE>::search(Data<KEY_TYPE> item)
 template <typename KEY_TYPE>
 Response AVLIndex<KEY_TYPE>::erase(Data<KEY_TYPE> item)
 {
+    Response response;
     file.open(this->indexFileName, std::ios::in | std::ios::out | std::ios::binary);
     if (!file.is_open()) { throw std::runtime_error("No se pudo abrir el archivo AVLIndex!"); }
+    response.startTimer();
 
-    AVLIndexNode currentNode;
+    try
+    {
+        AVLIndexNode currentNode;
 
-    bool isRemoved = erase(header.rootPointer, -1, currentNode, item);
+        bool isRemoved = erase(header.rootPointer, -1, currentNode, item);
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+    
 
+    response.stopTimer();
     file.close();
-    return isRemoved;
+    return response;
 }
 
 template <typename KEY_TYPE>

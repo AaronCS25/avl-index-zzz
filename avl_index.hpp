@@ -35,7 +35,7 @@ class AVLIndex : public Index<KEY_TYPE>
 
     physical_pos maxNode(physical_pos nodePointer);
 
-    bool removeIndex(physical_pos cPointer, physical_pos pPointer, AVLIndexNode<KEY_TYPE> &cNode, Data<KEY_TYPE> item);
+    bool removeIndex(physical_pos cPointer, physical_pos pPointer, AVLIndexNode<KEY_TYPE> &cNode, Data<KEY_TYPE> item, Response &response);
 
     void fixValue(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &cNode, Data<KEY_TYPE> &item1, Data<KEY_TYPE> &item2);
 
