@@ -3,7 +3,9 @@
 
 int main()
 {
-    AVLIndex<int> avlIndex("test.dat");
+    std::string indexFileName = "mi_indice.avl";
+
+    AVLIndex<int> index(indexFileName);
     Data<int> item1, item2, item3, item4, item5, item6, item7, item8, item9, item10;
     item1.key = 1;
     item2.key = 2;
@@ -16,26 +18,26 @@ int main()
     item9.key = 9;
 
 
-    index.insert(item1);
-    index.insert(item2);
-    index.insert(item3);
-    index.insert(item4);
-    index.insert(item5);
-    index.insert(item6);
-    index.insert(item7);
-    index.insert(item8);
-    index.insert(item9);
+    // index.insert(item1);
+    // index.insert(item2);
+    // index.insert(item3);
+    // index.insert(item4);
+    // index.insert(item5);
+    // index.insert(item6);
+    // index.insert(item7);
+    // index.insert(item8);
+    // index.insert(item9);
 
     index.displayPretty();
 
     std::vector<AVLIndexNode<int>> vector;
 
-    vector = index.searchIndexsByRange(item3, item8);
+    // vector = index.searchIndexsByRange(item3, item8);
 
-    for (int i = 0; i < vector.size(); i++)
-    {
-        std::cout << vector[i];
-    }
+    // for (int i = 0; i < vector.size(); i++)
+    // {
+    //     std::cout << vector[i];
+    // }
     
 
     // index.removeIndex(item1);

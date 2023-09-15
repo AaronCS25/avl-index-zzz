@@ -15,7 +15,7 @@ class AVLIndex : public Index<KEY_TYPE>
 
     void initIndex();
 
-    void add(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &cNode, AVLIndexNode<KEY_TYPE> &iNode, Response &response);
+    void insert(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &cNode, AVLIndexNode<KEY_TYPE> &iNode, Response &response);
 
     void balance(physical_pos nodePointer);
 
@@ -50,13 +50,15 @@ public:
         initIndex();
     }
 
-    Response add(Data<KEY_TYPE> item);
+    std::string get_index_name() override;
 
-    Response search(Data<KEY_TYPE> item);
+    Response add(Data<KEY_TYPE> data, physical_pos raw_pos) override;
 
-    Response erase(Data<KEY_TYPE> item);
+    Response search(Data<KEY_TYPE> item) override;
 
-    Response rangeSearch(Data<KEY_TYPE> start, Data<KEY_TYPE> end);
+    Response erase(Data<KEY_TYPE> item) override;
+
+    Response rangeSearch(Data<KEY_TYPE> start, Data<KEY_TYPE> end) override;
 
     void displayPretty();
 };

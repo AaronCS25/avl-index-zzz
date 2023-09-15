@@ -43,7 +43,7 @@ void AVLIndex<KEY_TYPE>::initIndex()
 }
 
 template <typename KEY_TYPE>
-void AVLIndex<KEY_TYPE>::add(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &cNode, AVLIndexNode<KEY_TYPE> &iNode, Response &response)
+void AVLIndex<KEY_TYPE>::insert(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &cNode, AVLIndexNode<KEY_TYPE> &iNode, Response &response)
 {
     if (cPointer == -1)
         {
@@ -61,7 +61,7 @@ void AVLIndex<KEY_TYPE>::add(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &cNod
 
         if (iNode.data > cNode.data)
         {
-            if (cNode.rightChildren != -1) { add(cNode.rightChildren, cNode, iNode, response); }
+            if (cNode.rightChildren != -1) { insert(cNode.rightChildren, cNode, iNode, response); }
             else
             {
                 file.seekg(0, std::ios::end);
@@ -91,7 +91,7 @@ void AVLIndex<KEY_TYPE>::add(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &cNod
         }
         else if (iNode.data < cNode.data)
         {
-            if (cNode.leftChildren != -1) { add(cNode.leftChildren, cNode, iNode, response); }
+            if (cNode.leftChildren != -1) { insert(cNode.leftChildren, cNode, iNode, response); }
             else
             {
                 file.seekg(0, std::ios::end);
@@ -178,6 +178,7 @@ void AVLIndex<KEY_TYPE>::leftRotation(physical_pos nodePointer)
     return;
 }
 
+//* 
 template <typename KEY_TYPE>
 void AVLIndex<KEY_TYPE>::rightRotation(physical_pos nodePointer)
 {
@@ -204,6 +205,7 @@ void AVLIndex<KEY_TYPE>::rightRotation(physical_pos nodePointer)
     return;
 }
 
+//* IS BALANCED
 template <typename KEY_TYPE>
 bool AVLIndex<KEY_TYPE>::isBalanced(physical_pos nodePointer)
 {
@@ -212,6 +214,7 @@ bool AVLIndex<KEY_TYPE>::isBalanced(physical_pos nodePointer)
     return true;
 }
 
+//* BALANCING FACTOR
 template <typename KEY_TYPE>
 int AVLIndex<KEY_TYPE>::balancingFactor(physical_pos nodePointer)
 {
@@ -222,6 +225,7 @@ int AVLIndex<KEY_TYPE>::balancingFactor(physical_pos nodePointer)
     return height(node.leftChildren) - height(node.rightChildren);
 }
 
+//* UPDATE-HEIGHT FUNCTION
 template <typename KEY_TYPE>
 void AVLIndex<KEY_TYPE>::updateHeigth(physical_pos nodePointer)
 {
@@ -237,6 +241,7 @@ void AVLIndex<KEY_TYPE>::updateHeigth(physical_pos nodePointer)
     return;
 }
 
+//* HEIGHT FUNCTION
 template <typename KEY_TYPE>
 long AVLIndex<KEY_TYPE>::height(physical_pos nodePointer)
 {
@@ -247,6 +252,7 @@ long AVLIndex<KEY_TYPE>::height(physical_pos nodePointer)
     return node.height;
 }
 
+//* SEARCH FUNCTION
 template <typename KEY_TYPE>
 AVLIndexNode<KEY_TYPE> AVLIndex<KEY_TYPE>::search(physical_pos currentPointer, AVLIndexNode<KEY_TYPE> &cNode, Data<KEY_TYPE> &item)
 {
@@ -445,7 +451,7 @@ void AVLIndex<KEY_TYPE>::searchIndexsByRange(physical_pos cPointer, AVLIndexNode
 
 //* ADD OPERATION
 template <typename KEY_TYPE>
-Response AVLIndex<KEY_TYPE>::add(Data<KEY_TYPE> item)
+Response AVLIndex<KEY_TYPE>::add(Data<KEY_TYPE> data, physical_pos raw_pos)
 {
     Response response;
     file.open(this->indexFileName, std::ios::in | std::ios::out | std::ios::binary);
@@ -459,7 +465,7 @@ Response AVLIndex<KEY_TYPE>::add(Data<KEY_TYPE> item)
         insertNode.data = item;
         AVLIndexNode<KEY_TYPE> currentNode;
 
-        add(header.rootPointer, currentNode, insertNode, response);
+        insert(header.rootPointer, currentNode, insertNode, response);
     }
     catch(std::runtime_error)
     {
@@ -472,7 +478,7 @@ Response AVLIndex<KEY_TYPE>::add(Data<KEY_TYPE> item)
     return true;
 }
 
-
+//* SEARCH OPERATION
 template <typename KEY_TYPE>
 Response AVLIndex<KEY_TYPE>::search(Data<KEY_TYPE> item)
 {
