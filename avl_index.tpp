@@ -441,7 +441,7 @@ void AVLIndex<KEY_TYPE>::displayPretty(const std::string &prefix, physical_pos c
 
 //*
 template <typename KEY_TYPE>
-void AVLIndex<KEY_TYPE>::searchIndexsByRange(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &cNode, Response &response, Data<KEY_TYPE> &begin, Data<KEY_TYPE> &end)
+void AVLIndex<KEY_TYPE>::rangeSearch(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &cNode, Response &response, Data<KEY_TYPE> &begin, Data<KEY_TYPE> &end)
 {
     if (cPointer == -1) { return; }
     
@@ -454,7 +454,7 @@ void AVLIndex<KEY_TYPE>::searchIndexsByRange(physical_pos cPointer, AVLIndexNode
         file.seekg(cPointer, std::ios::beg);
         file.read((char*) &cNode, sizeof(AVLIndexNode<KEY_TYPE>));
     }
-    if (cNode.data >= begin && cNode.data <= end) { response.records.push_back(cNode.raw_pos) }
+    if (cNode.data >= begin && cNode.data <= end) { response.records.push_back(cNode.raw_pos); }
     if (cNode.data < end)
     {
         rangeSearch(cNode.rightChildren, cNode, response, begin, end);
