@@ -285,7 +285,7 @@ physical_pos AVLIndex<KEY_TYPE>::maxNode(physical_pos nodePointer)
 }
 
 template <typename KEY_TYPE>
-bool AVLIndex<KEY_TYPE>::removeIndex(physical_pos cPointer, physical_pos pPointer, AVLIndexNode<KEY_TYPE> &cNode, Data<KEY_TYPE> item, Response &response)
+bool AVLIndex<KEY_TYPE>::erase(physical_pos cPointer, physical_pos pPointer, AVLIndexNode<KEY_TYPE> &cNode, Data<KEY_TYPE> item, Response &response)
 {
     if (cPointer == -1) { return false; }
 
@@ -519,6 +519,7 @@ Response AVLIndex<KEY_TYPE>::search(Data<KEY_TYPE> item)
     return response;
 }
 
+//* ERASE
 template <typename KEY_TYPE>
 Response AVLIndex<KEY_TYPE>::erase(Data<KEY_TYPE> item)
 {
