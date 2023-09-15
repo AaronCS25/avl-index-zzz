@@ -462,7 +462,7 @@ Response AVLIndex<KEY_TYPE>::add(Data<KEY_TYPE> data, physical_pos raw_pos)
     try
     {
         AVLIndexNode<KEY_TYPE> insertNode;
-        insertNode.data = item;
+        insertNode.data = data;
         AVLIndexNode<KEY_TYPE> currentNode;
 
         insert(header.rootPointer, currentNode, insertNode, response);
@@ -475,7 +475,7 @@ Response AVLIndex<KEY_TYPE>::add(Data<KEY_TYPE> data, physical_pos raw_pos)
 
     response.stopTimer();
     file.close();
-    return true;
+    return response;
 }
 
 //* SEARCH OPERATION
