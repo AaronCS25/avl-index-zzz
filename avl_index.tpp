@@ -503,7 +503,7 @@ Response AVLIndex<KEY_TYPE>::search(Data<KEY_TYPE> item)
 
     response.stopTimer();
     file.close();
-    return searchNode;
+    return response;
 }
 
 template <typename KEY_TYPE>
