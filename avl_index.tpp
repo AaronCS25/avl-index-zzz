@@ -443,6 +443,7 @@ void AVLIndex<KEY_TYPE>::searchIndexsByRange(physical_pos cPointer, AVLIndexNode
     return;
 }
 
+//* ADD OPERATION
 template <typename KEY_TYPE>
 Response AVLIndex<KEY_TYPE>::add(Data<KEY_TYPE> item)
 {
@@ -471,16 +472,30 @@ Response AVLIndex<KEY_TYPE>::add(Data<KEY_TYPE> item)
     return true;
 }
 
+
 template <typename KEY_TYPE>
 Response AVLIndex<KEY_TYPE>::search(Data<KEY_TYPE> item)
 {
+    Response response;
     file.open(this->indexFileName, std::ios::in | std::ios::out | std::ios::binary);
     if (!file.is_open()) { throw std::runtime_error("No se pudo abrir el archivo AVLIndex!"); }
-    
-    AVLIndexNode<KEY_TYPE> searchNode;
+    response.start_time();
 
-    search(header.rootPointer, searchNode, item);
+    try
+    {
+        // Comentario
+        AVLIndexNode<KEY_TYPE> searchNode;
 
+        search(header.rootPointer, searchNode, item);
+        // TODO: MODIFICAR 
+        response.records.push_back(searchNode.raw_pos);
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+
+    response.stopTimer();
     file.close();
     return searchNode;
 }
