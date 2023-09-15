@@ -41,7 +41,7 @@ class AVLIndex : public Index<KEY_TYPE>
 
     void displayPretty(const std::string &prefix, physical_pos cPointer, bool isLeft);
 
-    void searchIndexsByRange(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &cNode, std::vector<AVLIndexNode<KEY_TYPE>> &cVector, Data<KEY_TYPE> &begin, Data<KEY_TYPE> &end);
+    void searchIndexsByRange(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &cNode, Response &response, Data<KEY_TYPE> &begin, Data<KEY_TYPE> &end);
 
 public:
     AVLIndex(std::string _indexFileName)

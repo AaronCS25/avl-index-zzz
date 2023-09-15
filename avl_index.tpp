@@ -284,6 +284,7 @@ physical_pos AVLIndex<KEY_TYPE>::maxNode(physical_pos nodePointer)
     else { return maxNode(node.rightChildren); }
 }
 
+//*
 template <typename KEY_TYPE>
 bool AVLIndex<KEY_TYPE>::erase(physical_pos cPointer, physical_pos pPointer, AVLIndexNode<KEY_TYPE> &cNode, Data<KEY_TYPE> item, Response &response)
 {
@@ -396,6 +397,7 @@ bool AVLIndex<KEY_TYPE>::erase(physical_pos cPointer, physical_pos pPointer, AVL
     return true;
 }
 
+//*
 template <typename KEY_TYPE>
 void AVLIndex<KEY_TYPE>::fixValue(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &cNode, Data<KEY_TYPE> &item1, AVLIndexNode<KEY_TYPE> &tempNode)
 {
@@ -417,6 +419,7 @@ void AVLIndex<KEY_TYPE>::fixValue(physical_pos cPointer, AVLIndexNode<KEY_TYPE> 
     return;
 }
 
+//*
 template <typename KEY_TYPE>
 void AVLIndex<KEY_TYPE>::displayPretty(const std::string &prefix, physical_pos cPointer, bool isLeft)
 {
@@ -436,8 +439,9 @@ void AVLIndex<KEY_TYPE>::displayPretty(const std::string &prefix, physical_pos c
     return;
 }
 
+//*
 template <typename KEY_TYPE>
-void AVLIndex<KEY_TYPE>::searchIndexsByRange(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &cNode, std::vector<AVLIndexNode<KEY_TYPE>> &cVector, Data<KEY_TYPE> &begin, Data<KEY_TYPE> &end)
+void AVLIndex<KEY_TYPE>::searchIndexsByRange(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &cNode, Response &response, Data<KEY_TYPE> &begin, Data<KEY_TYPE> &end)
 {
     if (cPointer == -1) { return; }
     
@@ -446,14 +450,14 @@ void AVLIndex<KEY_TYPE>::searchIndexsByRange(physical_pos cPointer, AVLIndexNode
 
     if (cNode.data > begin)
     {
-        rangeSearch(cNode.leftChildren, cNode, cVector, begin, end);
+        rangeSearch(cNode.leftChildren, cNode, response, begin, end);
         file.seekg(cPointer, std::ios::beg);
         file.read((char*) &cNode, sizeof(AVLIndexNode<KEY_TYPE>));
     }
-    if (cNode.data >= begin && cNode.data <= end) { cVector.push_back(cNode); }
+    if (cNode.data >= begin && cNode.data <= end) { response.records.push_back(cNode.raw_pos) }
     if (cNode.data < end)
     {
-        rangeSearch(cNode.rightChildren, cNode, cVector, begin, end);
+        rangeSearch(cNode.rightChildren, cNode, response, begin, end);
         file.seekg(cPointer, std::ios::beg);
         file.read((char*) &cNode, sizeof(AVLIndexNode<KEY_TYPE>));
     }
@@ -545,19 +549,29 @@ Response AVLIndex<KEY_TYPE>::erase(Data<KEY_TYPE> item)
     return response;
 }
 
+//*
 template <typename KEY_TYPE>
 Response AVLIndex<KEY_TYPE>::rangeSearch(Data<KEY_TYPE> start, Data<KEY_TYPE> end)
 {
+    Response response;
     file.open(this->indexFileName, std::ios::in | std::ios::out | std::ios::binary);
     if (!file.is_open()) { throw std::runtime_error("No se pudo abrir el archivo AVLIndex!"); }
+    response.startTimer();
 
-    AVLIndexNode node;
-    std::vector<AVLIndexNode> vector;
+    try
+    {
+        AVLIndexNode node;
 
-    rangeSearch(header.rootPointer, node, vector, start, end);
+        rangeSearch(header.rootPointer, node, response, start, end);
+    }
+    catch(std::runtime_error)
+    {
+        throw std::runtime_error("Couldn't erase");
+    }
 
+    response.stopTimer();
     file.close();
-    return vector;
+    return response;
 }
 
 template <typename KEY_TYPE>
