@@ -43,7 +43,7 @@ void AVLIndex<KEY_TYPE>::initIndex()
 }
 
 template <typename KEY_TYPE>
-void AVLIndex<KEY_TYPE>::insert(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &cNode, AVLIndexNode<KEY_TYPE> &iNode)
+void AVLIndex<KEY_TYPE>::add(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &cNode, AVLIndexNode<KEY_TYPE> &iNode, Response &response)
 {
     if (cPointer == -1)
         {
@@ -61,7 +61,7 @@ void AVLIndex<KEY_TYPE>::insert(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &c
 
         if (iNode.data > cNode.data)
         {
-            if (cNode.rightChildren != -1) { insert(cNode.rightChildren, cNode, iNode); }
+            if (cNode.rightChildren != -1) { add(cNode.rightChildren, cNode, iNode, response); }
             else
             {
                 file.seekg(0, std::ios::end);
@@ -77,6 +77,9 @@ void AVLIndex<KEY_TYPE>::insert(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &c
                     file.seekp(0, std::ios::beg);
                     file.write((char*) &header, sizeof(AVLIndexHeader));
                 }
+
+                //actualiza el response
+                response.records.push_back(insertPointer);
 
                 file.seekp(insertPointer, std::ios::beg);
                 file.write((char*) &iNode, sizeof(AVLIndexNode<KEY_TYPE>));
@@ -88,7 +91,7 @@ void AVLIndex<KEY_TYPE>::insert(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &c
         }
         else if (iNode.data < cNode.data)
         {
-            if (cNode.leftChildren != -1) { insert(cNode.leftChildren, cNode, iNode); }
+            if (cNode.leftChildren != -1) { add(cNode.leftChildren, cNode, iNode, response); }
             else
             {
                 file.seekg(0, std::ios::end);
@@ -104,6 +107,9 @@ void AVLIndex<KEY_TYPE>::insert(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &c
                     file.seekp(0, std::ios::beg);
                     file.write((char*) &header, sizeof(AVLIndexHeader));
                 }
+
+                //actualiza el response
+                response.records.push_back(insertPointer);
 
                 file.seekp(insertPointer, std::ios::beg);
                 file.write((char*) &iNode, sizeof(AVLIndexNode<KEY_TYPE>));
@@ -277,12 +283,12 @@ bool AVLIndex<KEY_TYPE>::removeIndex(physical_pos cPointer, physical_pos pPointe
     if (item > cNode.data)
     {
         pPointer = cPointer;
-        if (!removeIndex(cNode.rightChildren, pPointer, cNode, item)) { return false; }
+        if (!erase(cNode.rightChildren, pPointer, cNode, item)) { return false; }
     }
     else if (item < cNode.data)
     {
         pPointer = cPointer;
-        if (!removeIndex(cNode.leftChildren, pPointer, cNode, item)) { return false; }
+        if (!erase(cNode.leftChildren, pPointer, cNode, item)) { return false; }
     }
     else
     {
@@ -364,7 +370,7 @@ bool AVLIndex<KEY_TYPE>::removeIndex(physical_pos cPointer, physical_pos pPointe
             file.read((char*) &tempNode, sizeof(AVLIndexNode<KEY_TYPE>));
 
             Data<KEY_TYPE> tempItem = tempNode.data;
-            removeIndex(header.rootPointer, -1, tempNode, tempItem);
+            erase(header.rootPointer, -1, tempNode, tempItem);
             fixValue(cPointer, tempNode, cNode.data, tempItem);
         }
     }
@@ -422,14 +428,14 @@ void AVLIndex<KEY_TYPE>::searchIndexsByRange(physical_pos cPointer, AVLIndexNode
 
     if (cNode.data > begin)
     {
-        searchIndexsByRange(cNode.leftChildren, cNode, cVector, begin, end);
+        rangeSearch(cNode.leftChildren, cNode, cVector, begin, end);
         file.seekg(cPointer, std::ios::beg);
         file.read((char*) &cNode, sizeof(AVLIndexNode<KEY_TYPE>));
     }
     if (cNode.data >= begin && cNode.data <= end) { cVector.push_back(cNode); }
     if (cNode.data < end)
     {
-        searchIndexsByRange(cNode.rightChildren, cNode, cVector, begin, end);
+        rangeSearch(cNode.rightChildren, cNode, cVector, begin, end);
         file.seekg(cPointer, std::ios::beg);
         file.read((char*) &cNode, sizeof(AVLIndexNode<KEY_TYPE>));
     }
@@ -438,24 +444,35 @@ void AVLIndex<KEY_TYPE>::searchIndexsByRange(physical_pos cPointer, AVLIndexNode
 }
 
 template <typename KEY_TYPE>
-bool AVLIndex<KEY_TYPE>::insert(Data<KEY_TYPE> item)
+Response AVLIndex<KEY_TYPE>::add(Data<KEY_TYPE> item)
 {
+    Response response;
     file.open(this->indexFileName, std::ios::in | std::ios::out | std::ios::binary);
     if (!file.is_open()) { throw std::runtime_error("No se pudo abrir el archivo AVLIndex!"); }
 
-    AVLIndexNode<KEY_TYPE> insertNode;
-    insertNode.data = item;
+    response.start_time();
 
-    AVLIndexNode<KEY_TYPE> currentNode;
+    try
+    {
+        AVLIndexNode<KEY_TYPE> insertNode;
+        insertNode.data = item;
+        AVLIndexNode<KEY_TYPE> currentNode;
 
-    insert(header.rootPointer, currentNode, insertNode);
+        add(header.rootPointer, currentNode, insertNode, response);
+    }
+    catch(std::runtime_error)
+    {
+        response.stopTimer();
+        throw std::runtime_error("Couldn't search");
+    }
 
+    response.stopTimer();
     file.close();
     return true;
 }
 
 template <typename KEY_TYPE>
-AVLIndexNode<KEY_TYPE> AVLIndex<KEY_TYPE>::search(Data<KEY_TYPE> item)
+Response AVLIndex<KEY_TYPE>::search(Data<KEY_TYPE> item)
 {
     file.open(this->indexFileName, std::ios::in | std::ios::out | std::ios::binary);
     if (!file.is_open()) { throw std::runtime_error("No se pudo abrir el archivo AVLIndex!"); }
@@ -469,21 +486,21 @@ AVLIndexNode<KEY_TYPE> AVLIndex<KEY_TYPE>::search(Data<KEY_TYPE> item)
 }
 
 template <typename KEY_TYPE>
-bool AVLIndex<KEY_TYPE>::removeIndex(Data<KEY_TYPE> item)
+Response AVLIndex<KEY_TYPE>::erase(Data<KEY_TYPE> item)
 {
     file.open(this->indexFileName, std::ios::in | std::ios::out | std::ios::binary);
     if (!file.is_open()) { throw std::runtime_error("No se pudo abrir el archivo AVLIndex!"); }
 
     AVLIndexNode currentNode;
 
-    bool isRemoved = removeIndex(header.rootPointer, -1, currentNode, item);
+    bool isRemoved = erase(header.rootPointer, -1, currentNode, item);
 
     file.close();
     return isRemoved;
 }
 
 template <typename KEY_TYPE>
-std::vector<AVLIndexNode<KEY_TYPE>> AVLIndex<KEY_TYPE>::searchIndexsByRange(Data<KEY_TYPE> start, Data<KEY_TYPE> end)
+Response AVLIndex<KEY_TYPE>::rangeSearch(Data<KEY_TYPE> start, Data<KEY_TYPE> end)
 {
     file.open(this->indexFileName, std::ios::in | std::ios::out | std::ios::binary);
     if (!file.is_open()) { throw std::runtime_error("No se pudo abrir el archivo AVLIndex!"); }
@@ -491,7 +508,7 @@ std::vector<AVLIndexNode<KEY_TYPE>> AVLIndex<KEY_TYPE>::searchIndexsByRange(Data
     AVLIndexNode node;
     std::vector<AVLIndexNode> vector;
 
-    searchIndexsByRange(header.rootPointer, node, vector, start, end);
+    rangeSearch(header.rootPointer, node, vector, start, end);
 
     file.close();
     return vector;
