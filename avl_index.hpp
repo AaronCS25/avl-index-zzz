@@ -1,6 +1,7 @@
 #ifndef AVL_INDEX_HPP
 #define AVL_INDEX_HPP
 
+#include "index.hpp"
 #include "avl_index_header.hpp"
 #include "avl_index_node.hpp"
 
@@ -50,6 +51,20 @@ public:
         initIndex();
     }
 
+    AVLIndex(
+        std::string _table_name,
+        std::string _attribute_name,
+        bool PK = false
+    ) {
+        this->table_name = _table_name;
+        this->attribute_name = _attribute_name;
+        this->index_name = "AVL";
+        this->indexFileName = _table_name + "_" + _attribute_name + "_" + this->index_name + ".bin";
+        this->duplicatesFilename = _table_name + "_" + _attribute_name + "_" + this->index_name + "_duplicateFile.bin";
+        this->PK = PK;
+        initIndex();
+    }
+
     std::string get_index_name() override;
 
     Response add(Data<KEY_TYPE> data, physical_pos raw_pos) override;
@@ -61,6 +76,10 @@ public:
     Response rangeSearch(Data<KEY_TYPE> start, Data<KEY_TYPE> end) override;
 
     void displayPretty();
+
+    void printDuplicateFile() { this->template printFile<AVLIndexNode<KEY_TYPE>>(this->duplicatesFilename); }
+
+    void printIndexFile() { this->template printFileWithHeader<AVLIndexHeader, AVLIndexNode<KEY_TYPE>>(this->indexFileName); }
 };
 
 #include "avl_index.tpp"

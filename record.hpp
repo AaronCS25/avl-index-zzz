@@ -9,7 +9,7 @@ public:
     Data<KEY_TYPE> data;
 
     physical_pos raw_pos;
-    physical_pos dup_pos;
+    physical_pos dup_pos{ -1 };
 
     void setData(Data<KEY_TYPE> data) {
         this->data = data;

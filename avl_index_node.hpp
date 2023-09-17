@@ -3,9 +3,12 @@
 
 #include "index.hpp"
 
-template<typename KEY_TYPE = default_data_type>
+template<typename KEY_TYPE>
 struct AVLIndexNode : public Record<KEY_TYPE>
 {
+
+    physical_pos current_pos;
+
     physical_pos leftChildren = -1;
     physical_pos rightChildren = -1;
 
@@ -15,12 +18,12 @@ struct AVLIndexNode : public Record<KEY_TYPE>
 
     friend std::ostream& operator<<(std::ostream& os, const AVLIndexNode& node)
     {
-        os << "Data: " << node.data << "\n";
-        os << "raw_pos:" << node.raw_pos << "\n";
-        os << "Left Children: " << node.leftChildren << "\n";
-        os << "Right Children: " << node.rightChildren << "\n";
-        os << "Next Delete: " << node.nextDelete << "\n";
-        os << "Height: " << node.height << "\n\n";
+        os << " | Data: " << node.data;
+        os << " | raw_pos:" << node.raw_pos;
+        os << " | Left Children: " << node.leftChildren;
+        os << " | Right Children: " << node.rightChildren;
+        os << " | Next Delete: " << node.nextDelete;
+        os << " | Height: " << node.height;
         return os;
     }
 

@@ -8,14 +8,20 @@ template <typename KEY_TYPE>
 void AVLIndex<KEY_TYPE>::initFile()
 {
     file.open(this->indexFileName, std::ios::in | std::ios::binary);
-        if (!file.is_open())
-        {
-            file.open(this->indexFileName, std::ios::out | std::ios::binary);
-            if (!file.good()) { throw std::runtime_error("No se pudo crear el AVLIndexFile!"); }
-            file.close();
-        }
-        else { file.close(); }
-        return;
+    if (!file.is_open())
+    {
+        file.open(this->indexFileName, std::ios::out | std::ios::binary);
+        if (!file.good()) { throw std::runtime_error("No se pudo crear el AVLIndexFile!"); }
+        file.close();
+    }
+    else { file.close(); }
+
+
+    std::ofstream duplicatesFile(this->duplicatesFilename, std::ios::app | std::ios::binary);
+    if(!duplicatesFile.is_open()) throw std::runtime_error("Couldn't create duplicatesFile");
+    duplicatesFile.close();
+
+    return;
 }
 
 //*
@@ -51,6 +57,8 @@ void AVLIndex<KEY_TYPE>::insert(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &c
     if (cPointer == -1)
         {
             file.seekp(sizeof(AVLIndexHeader), std::ios::beg);
+
+            iNode.current_pos = sizeof(AVLIndexHeader);
             file.write((char*) &iNode, sizeof(AVLIndexNode<KEY_TYPE>));
             header.rootPointer = sizeof(AVLIndexHeader);
 
@@ -81,14 +89,14 @@ void AVLIndex<KEY_TYPE>::insert(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &c
                     file.write((char*) &header, sizeof(AVLIndexHeader));
                 }
 
-                //actualiza el response
-                response.records.push_back(insertPointer);
 
                 file.seekp(insertPointer, std::ios::beg);
+                iNode.current_pos = insertPointer;
                 file.write((char*) &iNode, sizeof(AVLIndexNode<KEY_TYPE>));
 
                 cNode.rightChildren = insertPointer;
                 file.seekp(cPointer, std::ios::beg);
+                cNode.current_pos = cPointer;
                 file.write((char*) &cNode, sizeof(AVLIndexNode<KEY_TYPE>));
             }
         }
@@ -111,18 +119,21 @@ void AVLIndex<KEY_TYPE>::insert(physical_pos cPointer, AVLIndexNode<KEY_TYPE> &c
                     file.write((char*) &header, sizeof(AVLIndexHeader));
                 }
 
-                //actualiza el response
-                response.records.push_back(insertPointer);
-
                 file.seekp(insertPointer, std::ios::beg);
+                iNode.current_pos = insertPointer;
                 file.write((char*) &iNode, sizeof(AVLIndexNode<KEY_TYPE>));
 
                 cNode.leftChildren = insertPointer;
                 file.seekp(cPointer, std::ios::beg);
+                cNode.current_pos = cPointer;
                 file.write((char*) &cNode, sizeof(AVLIndexNode<KEY_TYPE>));
             }
         }
-        else { return ; }
+        else { 
+            if (this->PK) throw std::runtime_error("Couldn't add duplicate in PK");
+            this->insertDuplicate(file, cNode, iNode);
+            return;
+        }
 
         updateHeigth(cPointer);
         if (!isBalanced(cPointer)) { balance(cPointer); }
@@ -172,9 +183,11 @@ void AVLIndex<KEY_TYPE>::leftRotation(physical_pos nodePointer)
     b.leftChildren = childPointer;
 
     file.seekp(nodePointer, std::ios::beg);
+    b.current_pos = nodePointer;
     file.write((char*) &b, sizeof(AVLIndexNode<KEY_TYPE>));
 
     file.seekp(childPointer, std::ios::beg);
+    a.current_pos = childPointer;
     file.write((char*) &a, sizeof(AVLIndexNode<KEY_TYPE>));
 
     updateHeigth(childPointer);
@@ -187,7 +200,7 @@ void AVLIndex<KEY_TYPE>::leftRotation(physical_pos nodePointer)
 template <typename KEY_TYPE>
 void AVLIndex<KEY_TYPE>::rightRotation(physical_pos nodePointer)
 {
-    AVLIndexNode a, b;
+    AVLIndexNode<KEY_TYPE> a, b;
     file.seekg(nodePointer, std::ios::beg);
     file.read((char*) &a, sizeof(AVLIndexNode<KEY_TYPE>));
 
@@ -200,9 +213,11 @@ void AVLIndex<KEY_TYPE>::rightRotation(physical_pos nodePointer)
     b.rightChildren = childPointer;
 
     file.seekp(nodePointer, std::ios::beg);
+    b.current_pos = nodePointer;
     file.write((char*) &b, sizeof(AVLIndexNode<KEY_TYPE>));
 
     file.seekp(childPointer, std::ios::beg);
+    a.current_pos = childPointer;
     file.write((char*) &a, sizeof(AVLIndexNode<KEY_TYPE>));
 
     updateHeigth(childPointer);
@@ -242,6 +257,7 @@ void AVLIndex<KEY_TYPE>::updateHeigth(physical_pos nodePointer)
     physical_pos hRigth = height(node.rightChildren);
     node.height = 1 + (hRigth > hLeft ? hRigth : hLeft);
     file.seekp(nodePointer, std::ios::beg);
+    node.current_pos = nodePointer;
     file.write((char*) &node, sizeof(AVLIndexNode<KEY_TYPE>));
     return;
 }
@@ -317,12 +333,14 @@ bool AVLIndex<KEY_TYPE>::erase(physical_pos cPointer, physical_pos pPointer, AVL
                 else if (pNode.rightChildren == cPointer) { pNode.rightChildren = -1; }
 
                 file.seekp(pPointer, std::ios::beg);
+                pNode.current_pos = pPointer;
                 file.write((char*) &pNode, sizeof(AVLIndexNode<KEY_TYPE>));
             }
 
-            response.records.push_back(cPointer);
+            //response.records.push_back(cPointer);
             cNode.nextDelete = header.lastDelete;
             file.seekp(cPointer, std::ios::beg);
+            cNode.current_pos = cPointer;
             file.write((char*) &cNode, sizeof(AVLIndexNode<KEY_TYPE>));
             
             header.lastDelete = cPointer;
@@ -341,12 +359,14 @@ bool AVLIndex<KEY_TYPE>::erase(physical_pos cPointer, physical_pos pPointer, AVL
                 else if (pNode.rightChildren == cPointer) { pNode.rightChildren = cNode.rightChildren; }
 
                 file.seekp(pPointer, std::ios::beg);
+                pNode.current_pos = pPointer;
                 file.write((char*) &pNode, sizeof(AVLIndexNode<KEY_TYPE>));
             }
 
-            response.records.push_back(cPointer);
+           // response.records.push_back(cPointer);
             cNode.nextDelete = header.lastDelete;
             file.seekp(cPointer, std::ios::beg);
+            cNode.current_pos = cPointer;
             file.write((char*) &cNode, sizeof(AVLIndexNode<KEY_TYPE>));
 
             header.lastDelete = cPointer;
@@ -365,12 +385,14 @@ bool AVLIndex<KEY_TYPE>::erase(physical_pos cPointer, physical_pos pPointer, AVL
                 else if (pNode.rightChildren == cPointer) { pNode.rightChildren = cNode.leftChildren; }
 
                 file.seekp(pPointer, std::ios::beg);
+                pNode.current_pos = pPointer;
                 file.write((char*) &pNode, sizeof(AVLIndexNode<KEY_TYPE>));
             }
 
-            response.records.push_back(cPointer);
+          //  response.records.push_back(cPointer);
             cNode.nextDelete = header.lastDelete;
             file.seekp(cPointer, std::ios::beg);
+            cNode.current_pos = cPointer;
             file.write((char*) &cNode, sizeof(AVLIndexNode<KEY_TYPE>));
 
             header.lastDelete = cPointer;
@@ -385,9 +407,10 @@ bool AVLIndex<KEY_TYPE>::erase(physical_pos cPointer, physical_pos pPointer, AVL
             file.seekg(newPos, std::ios::beg);
             file.read((char*) &tempNode, sizeof(AVLIndexNode<KEY_TYPE>));
 
-            response.records.push_back(cPointer);
+         //   response.records.push_back(cPointer);
             AVLIndexNode<KEY_TYPE> otherNode;
-            erase(header.rootPointer, -1, otherNode, tempNode.data);
+            Response fake;
+            erase(header.rootPointer, -1, otherNode, tempNode.data, fake);
             fixValue(cPointer, otherNode, cNode.data, tempNode);
         }
     }
@@ -395,7 +418,7 @@ bool AVLIndex<KEY_TYPE>::erase(physical_pos cPointer, physical_pos pPointer, AVL
     updateHeigth(cPointer);
     if (!isBalanced(cPointer)) {  balance(cPointer); }
     return true;
-}
+};
 
 //*
 template <typename KEY_TYPE>
@@ -414,10 +437,11 @@ void AVLIndex<KEY_TYPE>::fixValue(physical_pos cPointer, AVLIndexNode<KEY_TYPE> 
         cNode.raw_pos = tempNode.raw_pos;
         cNode.dup_pos = tempNode.dup_pos;
         file.seekp(cPointer, std::ios::beg);
+        cNode.current_pos = cPointer;
         file.write((char*) &cNode, sizeof(AVLIndexNode<KEY_TYPE>));
     }
     return;
-}
+};
 
 //*
 template <typename KEY_TYPE>
@@ -437,7 +461,7 @@ void AVLIndex<KEY_TYPE>::displayPretty(const std::string &prefix, physical_pos c
     displayPretty(prefix + (isLeft ? "|   " : "    "), cNode.leftChildren, true);
     displayPretty(prefix + (isLeft ? "|   " : "    "), cNode.rightChildren, false);
     return;
-}
+};
 
 //*
 template <typename KEY_TYPE>
@@ -454,7 +478,10 @@ void AVLIndex<KEY_TYPE>::rangeSearch(physical_pos cPointer, AVLIndexNode<KEY_TYP
         file.seekg(cPointer, std::ios::beg);
         file.read((char*) &cNode, sizeof(AVLIndexNode<KEY_TYPE>));
     }
-    if (cNode.data >= begin && cNode.data <= end) { response.records.push_back(cNode.raw_pos); }
+    if (cNode.data >= begin && cNode.data <= end) { 
+        this->getAllRawCurrentRecords(cNode, response.records);
+    //    response.records.push_back(cNode.raw_pos); 
+    }
     if (cNode.data < end)
     {
         rangeSearch(cNode.rightChildren, cNode, response, begin, end);
@@ -463,7 +490,7 @@ void AVLIndex<KEY_TYPE>::rangeSearch(physical_pos cPointer, AVLIndexNode<KEY_TYP
     }
 
     return;
-}
+};
 
 //* ADD OPERATION
 template <typename KEY_TYPE>
@@ -479,9 +506,12 @@ Response AVLIndex<KEY_TYPE>::add(Data<KEY_TYPE> data, physical_pos raw_pos)
     {
         AVLIndexNode<KEY_TYPE> insertNode;
         insertNode.data = data;
+        insertNode.raw_pos = raw_pos;
         AVLIndexNode<KEY_TYPE> currentNode;
 
         insert(header.rootPointer, currentNode, insertNode, response);
+
+        response.records.push_back(raw_pos);
     }
     catch(std::runtime_error)
     {
@@ -492,7 +522,7 @@ Response AVLIndex<KEY_TYPE>::add(Data<KEY_TYPE> data, physical_pos raw_pos)
     response.stopTimer();
     file.close();
     return response;
-}
+};
 
 //* SEARCH OPERATION
 template <typename KEY_TYPE>
@@ -510,7 +540,8 @@ Response AVLIndex<KEY_TYPE>::search(Data<KEY_TYPE> item)
 
         search(header.rootPointer, searchNode, item);
         // TODO: MODIFICAR 
-        response.records.push_back(searchNode.raw_pos);
+        this->getAllRawCurrentRecords(searchNode, response.records);
+        //response.records.push_back(searchNode.raw_pos);
     }
     catch(std::runtime_error)
     {
@@ -521,7 +552,7 @@ Response AVLIndex<KEY_TYPE>::search(Data<KEY_TYPE> item)
     response.stopTimer();
     file.close();
     return response;
-}
+};
 
 //* ERASE
 template <typename KEY_TYPE>
@@ -534,9 +565,11 @@ Response AVLIndex<KEY_TYPE>::erase(Data<KEY_TYPE> item)
 
     try
     {
-        AVLIndexNode currentNode;
+        AVLIndexNode<KEY_TYPE> currentNode;
 
         bool isRemoved = erase(header.rootPointer, -1, currentNode, item, response);
+
+        response.records.push_back(currentNode.raw_pos);
     }
     catch(std::runtime_error)
     {
@@ -547,7 +580,7 @@ Response AVLIndex<KEY_TYPE>::erase(Data<KEY_TYPE> item)
     response.stopTimer();
     file.close();
     return response;
-}
+};
 
 //*
 template <typename KEY_TYPE>
@@ -560,19 +593,19 @@ Response AVLIndex<KEY_TYPE>::rangeSearch(Data<KEY_TYPE> start, Data<KEY_TYPE> en
 
     try
     {
-        AVLIndexNode node;
+        AVLIndexNode<KEY_TYPE> node;
 
         rangeSearch(header.rootPointer, node, response, start, end);
     }
     catch(std::runtime_error)
     {
-        throw std::runtime_error("Couldn't erase");
+        throw std::runtime_error("Couldn't range search");
     }
 
     response.stopTimer();
     file.close();
     return response;
-}
+};
 
 template <typename KEY_TYPE>
 void AVLIndex<KEY_TYPE>::displayPretty()
@@ -588,6 +621,11 @@ void AVLIndex<KEY_TYPE>::displayPretty()
 
     file.close();
     return;
+};
+
+template <typename KEY_TYPE>
+std::string AVLIndex<KEY_TYPE>::get_index_name() {
+    return this->index_name;
 }
 
 #endif // AVL_INDEX_CPP
